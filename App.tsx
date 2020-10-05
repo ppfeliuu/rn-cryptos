@@ -1,21 +1,68 @@
-import React from "react";
-import { StyleSheet, Image, View } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  StyleSheet,
+  Image,
+  View,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 import Form from "./components/Form";
 import Header from "./components/Header";
+import axios from "axios";
+import Cotizacion from "./components/Cotizacion";
 
 export default function App() {
+  const [moneda, setMoneda] = useState("");
+  const [criptomoneda, setCriptoMoneda] = useState("");
+  const [consultarAPI, setConsultarAPI] = useState(false);
+  const [resultado, setResultado] = useState({});
+  const [cargando, setCargando] = useState(false);
+
+  useEffect(() => {
+    const cotizarCrypto = async () => {
+      if (consultarAPI) {
+        const url = `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${criptomoneda}&tsyms=${moneda}`;
+        const resultado = await axios.get(url);
+
+        setCargando(true);
+
+        setTimeout(() => {
+          setResultado(resultado.data.DISPLAY[criptomoneda][moneda]);
+          setConsultarAPI(false);
+          setCargando(false);
+        }, 3000);
+      }
+    };
+
+    cotizarCrypto();
+  }, [consultarAPI]);
+
+  const component = cargando ? (
+    <ActivityIndicator size="large" color="5e49e2" />
+  ) : (
+    <Cotizacion resultado={resultado} />
+  );
   return (
     <>
-      <Header />
+      <ScrollView>
+        <Header />
 
-      <Image
-        style={styles.imagen}
-        source={require("./assets/img/cryptomonedas.png")}
-      />
+        <Image
+          style={styles.imagen}
+          source={require("./assets/img/cryptomonedas.png")}
+        />
 
-      <View style={styles.contenido}>
-        <Form />
-      </View>
+        <View style={styles.contenido}>
+          <Form
+            moneda={moneda}
+            criptomoneda={criptomoneda}
+            setMoneda={setMoneda}
+            setCriptoMoneda={setCriptoMoneda}
+            setConsultarAPI={setConsultarAPI}
+          />
+        </View>
+        <View style={{ marginTop: 40 }}>{component}</View>
+      </ScrollView>
     </>
   );
 }
